@@ -587,6 +587,97 @@
     }
 }
 
+  /* ================================== */
+  /* ======== MENU CHAT AI CUSTOM (DITAMBAH TOMBOL HAPUS) ======== */
+  /* ================================== */
+  .ai-container {
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 85vh; 
+  }
+  .ai-container h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--ai-primary-color); 
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .prompt-box {
+    background: var(--ai-secondary-color); 
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: var(--text-color);
+    min-height: 120px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    flex-grow: 1; 
+  }
+  .prompt-box textarea { 
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 14px;
+    resize: none; 
+    outline: none;
+    box-sizing: border-box; 
+  }
+  .prompt-box p { 
+    color: #aaaaaa;
+    font-size: 14px;
+  }
+  .response-box {
+    background: var(--ai-secondary-color); 
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 20px; 
+    color: var(--text-color);
+    min-height: 120px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    overflow-y: auto; 
+  }
+  .response-box p {
+    color: var(--text-color);
+    font-size: 14px;
+  }
+  
+  /* Kontainer Tombol */
+  .ai-button-container {
+      display: flex;
+      gap: 10px; /* Jarak antara tombol */
+      margin-bottom: 0px; 
+  }
+  
+  .ai-button {
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px; /* Dikecilkan sedikit untuk menampung dua tombol */
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease; 
+    flex-grow: 1; /* Agar tombol membagi ruang secara merata */
+  }
+
+  /* Tombol Hasilkan Respons (Primer) */
+  #gemini-generate-btn {
+    background: var(--ai-primary-color); 
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.5); 
+  }
+  
+  /* Tombol Hapus Chat (Sekunder) */
+  #clear-chat-btn {
+    background: var(--accent-color); /* Warna yang lebih gelap */
+    box-shadow: 0 0 10px rgba(255, 51, 51, 0.2); 
+  }
+
+  /* Hover effect */
+  #gemini-generate-btn:hover { background: #ff5555; }
+  #clear-chat-btn:hover { background: #6a0000; }
+
   /* ======== MENU BAWAH (NAVBAR) MODIFIKASI ======== */
   .menu {
     position: fixed; bottom: 0; width: 100%; 
@@ -768,7 +859,7 @@
           <div class="profile-details">
               <div class="detail-item">
                   <i class="fas fa-calendar-alt"></i>
-                  <span>2025</span>
+                  <span>2025-2026</span>
               </div>
               <div class="detail-item">
                   <i class="fas fa-shield-alt"></i>
@@ -841,6 +932,38 @@
         </div>
     </div>
     
+    <!-- TAB CHAT AI YANG TETAP ADA -->
+    <div class="tab-content" id="tab-chat-ai">
+        <div class="header">
+            <i class="fas fa-bars icon"></i>
+            <span class="title-app">9XV4 - TR4SH</span>
+            <i class="fas fa-user-circle icon" id="profile-icon-3"></i>
+        </div>
+        
+        <div class="kamui-text" id="kamui-text-3">CHAT AI</div>
+        
+        <div class="ai-container">
+            <h1>Chat Ai</h1>
+            
+            <div class="prompt-box">
+                <textarea id="gemini-prompt-input" placeholder="Ketik prompt Anda di sini..."></textarea>
+            </div>
+            
+            <div class="ai-button-container">
+                <button class="ai-button" id="gemini-generate-btn">
+                    <i class="fas fa-paper-plane"></i> Hasilkan Respons
+                </button>
+                <button class="ai-button" id="clear-chat-btn">
+                    <i class="fas fa-trash-alt"></i> Bersihkan Chat
+                </button>
+            </div>
+
+            <div class="response-box" id="gemini-ai-response">
+                <p>Respons AI akan muncul di sini.</p>
+            </div>
+        </div>
+    </div>
+    
   </div>
 
   <div class="menu" id="navbar">
@@ -851,6 +974,10 @@
     <button data-tab="tab-send-account">
         <i class="fas fa-paper-plane"></i>
         KIRIM AKUN
+    </button>
+    <button data-tab="tab-chat-ai">
+        <i class="fas fa-robot"></i>
+        CHAT AI
     </button>
   </div>
 
@@ -878,6 +1005,7 @@
   const welcomeText = document.getElementById("welcome-text");
   const kamuiText = document.getElementById("kamui-text");
   const kamuiText2 = document.getElementById("kamui-text-2");
+  const kamuiText3 = document.getElementById("kamui-text-3");
   
   const totalLoadTime = 5000; 
   const zoomDuration = 2000; 
@@ -885,7 +1013,7 @@
   
   // Fungsi untuk menampilkan teks WELCOME dengan animasi satu per satu
   function animateWelcomeText() {
-    const text = "W E L C O M - O W N E R"; // Gunakan tanpa spasi
+    const text = "W E L C O M E-O W N E R"; // Gunakan tanpa spasi
     welcomeText.innerHTML = "";
     
     // Tampilkan elemen welcome text
@@ -904,6 +1032,7 @@
     setTimeout(() => {
       kamuiText.classList.add("show");
       kamuiText2.classList.add("show");
+      kamuiText3.classList.add("show");
     }, text.length * 100 + 500); // Setelah animasi WELCOME selesai + 500ms delay
   }
 
@@ -1121,11 +1250,112 @@
   });
 
   // ==================================
+  // ======== LOGIKA BAGIAN CHAT AI ========
+  // ==================================
+  
+  const GEMINI_API_KEY = "AIzaSyAQtJlO1DLqk39czpvaaP5_LU5SEVh50aA"; 
+  const MODEL_NAME = "gemini-2.5-flash"; 
+
+  const geminiPromptInput = document.getElementById('gemini-prompt-input');
+  const geminiGenerateBtn = document.getElementById('gemini-generate-btn');
+  const geminiAIResponse = document.getElementById('gemini-ai-response');
+  const clearChatBtn = document.getElementById('clear-chat-btn');
+
+  // Fungsi untuk mengirim prompt ke Gemini API menggunakan FETCH
+  async function generateGeminiResponse(prompt) {
+      if (!GEMINI_API_KEY) {
+          geminiAIResponse.innerHTML = '<p style="color: var(--ai-primary-color, #ff3333);">Kesalahan: Kunci API Gemini belum diatur.</p>';
+          return;
+      }
+      
+      geminiGenerateBtn.disabled = true;
+      clearChatBtn.disabled = true; // Nonaktifkan tombol hapus saat memproses
+
+      // 1. Tampilkan pesan loading
+      geminiAIResponse.innerHTML = '<p style="color: var(--ai-primary-color, #ff3333);"><i class="fas fa-spinner fa-spin"></i> Sedang memproses...</p>';
+
+      try {
+          // Payload sesuai format Gemini API
+          let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+          const payload = { contents: chatHistory };
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
+
+          const response = await fetch(apiUrl, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify(payload) 
+          });
+
+          if (!response.ok) {
+              let errorText = response.statusText;
+              try {
+                  const errorData = await response.json();
+                  errorText = errorData.error ? errorData.error.message : response.statusText;
+              } catch (e) {
+                  // Fallback jika respons bukan JSON
+              }
+              geminiAIResponse.innerHTML = `<p style="color: var(--ai-primary-color, #ff3333);">
+                  ❌ **ERROR API KEY DITOLAK / Otorisasi GAGAL.**
+                  <br> Detail Error: *${errorText}*
+              </p>`;
+              return;
+          }
+
+          const result = await response.json();
+          // Parsing respons
+          if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+              const text = result.candidates[0].content.parts[0].text;
+              const formattedText = text.replace(/\n/g, '<br>');
+              geminiAIResponse.innerHTML = `<p>${formattedText}</p>`;
+          } else {
+              geminiAIResponse.innerHTML = '<p style="color: var(--ai-primary-color, #ff3333);">Gagal mendapatkan respons dari Gemini AI. Struktur respons tidak terduga.</p>';
+          }
+
+      } catch (error) {
+          console.error("Gemini API Error (Kemungkinan Key Ditolak):", error);
+          geminiAIResponse.innerHTML = `<p style="color: var(--ai-primary-color, #ff3333);">
+              ❌ Terjadi kesalahan saat menghubungi Gemini AI: ${error.message}
+          </p>`;
+      } finally {
+          geminiGenerateBtn.disabled = false;
+          clearChatBtn.disabled = false; // Aktifkan kembali tombol hapus
+      }
+  }
+
+  // Event Listener Tombol Hasilkan Respons
+  geminiGenerateBtn.addEventListener('click', () => {
+      const userPrompt = geminiPromptInput.value.trim();
+
+      if (userPrompt) {
+          generateGeminiResponse(userPrompt);
+      } else {
+        geminiAIResponse.innerHTML = '<p style="color: #ff9999;">Mohon masukkan prompt Anda terlebih dahulu.</p>';
+      }
+  });
+
+  // Event Listener Tombol Bersihkan Chat
+  clearChatBtn.addEventListener('click', () => {
+      geminiPromptInput.value = ''; // Kosongkan input prompt
+      geminiAIResponse.innerHTML = '<p>Respons AI akan muncul di sini.</p>'; // Reset kotak respons
+  });
+
+  // Tambahkan dukungan Enter untuk mengirim
+  if(geminiPromptInput) {
+    geminiPromptInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            if(geminiGenerateBtn) geminiGenerateBtn.click();
+        }
+    });
+  }
+
+  // ==================================
   // ======== LOGIKA POPUP PROFIL ========
   // ==================================
   
   const profileIcon = document.getElementById('profile-icon');
   const profileIcon2 = document.getElementById('profile-icon-2');
+  const profileIcon3 = document.getElementById('profile-icon-3');
   const profilePopup = document.getElementById('profile-popup');
   const popupClose = document.getElementById('popup-close');
   
@@ -1135,6 +1365,10 @@
   });
   
   profileIcon2.addEventListener('click', () => {
+    profilePopup.style.display = 'flex';
+  });
+  
+  profileIcon3.addEventListener('click', () => {
     profilePopup.style.display = 'flex';
   });
   
