@@ -1,476 +1,1167 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Seller - 9XV4 TR4SH</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9XV4 - TR4SH Seller Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+<style>
+  /* Variabel CSS Merah-Hitam */
+  :root {
+    --primary-color: #ff3333; /* Merah Neon */
+    --secondary-color: #1a0000;
+    --accent-color: #4a0000; 
+    --text-color: #f0f2f5;
+    --dark-bg: #000000;
+    --glow-color: #cc0000; 
+    --ai-primary-color: #ff3333; /* Warna AI diubah menjadi merah neon */
+    --ai-secondary-color: #4a0000; /* Warna AI sekunder */
+  }
+  
+  /* ======== GLOBAL & FONT UTAMA ======== */
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--dark-bg); 
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden; 
+  }
+
+  h1, h2, h3, p {
+    margin: 0;
+  }
+  
+  /* ======== LOADING SHARINGAN ======== */
+  .loading { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: black; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; z-index: 9999;
+    will-change: opacity; transition: background 0.5s ease-out; 
+    padding: 0 20px; /* Tambahan untuk padding */
+    box-sizing: border-box; /* Tambahan */
+  }
+  .loading img {
+    width: 220px; height: 220px; animation: rotate 5s linear forwards; 
+    filter: drop-shadow(0 0 35px #ff0000); transition: transform 2.0s ease-in-out, opacity 2.0s ease-in-out; 
+    will-change: transform, opacity;
+  }
+  .loading-text {
+    margin-top: 25px; font-size: 14px; letter-spacing: 3px; color: #ff4b4b;
+    text-align: center; font-family: 'Orbitron', sans-serif; transition: opacity 0.4s ease-out; 
+  }
+  
+  /* Teks WELCOME yang muncul satu per satu - DIATAS SHARINGAN */
+  .welcome-text {
+    position: absolute;
+    top: 30%; /* Posisi di atas Sharingan */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px; /* Sedikit lebih kecil */
+    font-weight: 700;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px var(--glow-color);
+    letter-spacing: 3px; /* Kurangi dari 5px */
+    font-family: 'Orbitron', sans-serif;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    white-space: nowrap; /* TAMBAH INI - mencegah wrap */
+    text-align: center; /* TAMBAH INI - pastikan rata tengah */
+    width: 100%; /* TAMBAH INI - pastikan full width */
+    padding: 0 15px;
+    box-sizing: border-box;
+  }
+  
+  .welcome-text.show {
+    opacity: 1;
+  }
+  
+  .welcome-char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); } 
+  }
+  .loading.zoom-out { background: #4a0000; }
+  .loading.zoom-out img { transform: scale(100); opacity: 0; }
+  .loading.zoom-out .loading-text { opacity: 0; }
+  .loading.zoom-out .welcome-text { opacity: 0; }
+  
+  /* Untuk mobile */
+  @media (max-width: 480px) {
+    .welcome-text {
+        font-size: 22px;
+        letter-spacing: 2px;
+    }
+  }
+
+  /* Untuk layar sangat kecil */
+  @media (max-width: 360px) {
+    .welcome-text {
+        font-size: 20px;
+        letter-spacing: 1px;
+    }
+  }
+  
+  /* ======== DASHBOARD WRAPPER & TABS ======== */
+  .dashboard-wrapper {
+    max-width: 1200px; 
+    margin: 0 auto;
+  }
+
+  /* Konten tab */
+  .tab-content {
+    display: none; /* Semua tab disembunyikan secara default */
+    padding: 20px 15px 80px 15px; 
+    background: var(--dark-bg);
+    opacity: 0; 
+    transition: opacity 1.0s ease-in-out; 
+  }
+  
+  /* Konten tab yang sedang aktif */
+  .tab-content.active {
+    display: block; 
+    opacity: 1; 
+  }
+
+  /* --- HEADER CUSTOM --- */
+  .header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 5px 0 20px 0; 
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    color: var(--text-color);
+    background-color: var(--dark-bg); /* Pastikan header memiliki latar belakang gelap */
+    z-index: 10; /* Agar header tidak tertutup oleh elemen lain saat scrolling */
+    position: sticky; /* Tetap di atas saat scroll */
+    top: 0;
+  }
+  .header .icon { 
+    font-size: 24px; 
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 5px; 
+  }
+  .title-app {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: white;
+    text-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color);
+  }
+  
+  /* Teks Kamui di dashboard - MUNCUL SETELAH WELCOME SELESAI */
+  .kamui-text {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-shadow: 0 0 15px var(--glow-color), 0 0 30px var(--glow-color);
+    margin: 20px 0 30px 0;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 3px;
+    animation: pulse 2s infinite;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  
+  .kamui-text.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+  }
+
+/* ======== PROFIL CARD BANNER ======== */
+.profile-card { 
+    background: linear-gradient(135deg, #1a0000 0%, #4a0000 50%, #1a0000 100%);
+    padding: 25px 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 40px rgba(255, 51, 51, 0.5);
+    position: relative;
+    overflow: hidden;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-color);
+}
+
+.profile-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 0%, rgba(255, 51, 51, 0.1) 50%, transparent 100%);
+    pointer-events: none;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.profile-image-container {
+    position: relative;
+    margin-right: 20px;
+}
+
+.profile-card img { 
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    object-fit: cover;
+    border: 4px solid var(--primary-color);
+    box-shadow: 0 0 30px var(--glow-color);
+    transition: transform 0.3s ease;
+}
+
+.profile-card img:hover {
+    transform: scale(1.05);
+}
+
+.online-status {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    background: #00ff00;
+    border: 3px solid var(--dark-bg);
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00ff00;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info .username { 
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+    text-shadow: 0 0 15px rgba(255, 51, 51, 0.8);
+    letter-spacing: 1.5px;
+}
+
+.profile-info .role { 
+    font-size: 18px;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.profile-info .level {
+    font-size: 14px;
+    color: #ff9999;
+    background: rgba(255, 51, 51, 0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+    border: 1px solid var(--primary-color);
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 20px 0;
+    border-top: 2px solid rgba(255, 51, 51, 0.4);
+    border-bottom: 2px solid rgba(255, 51, 51, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+    padding: 0 10px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.6);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #ff9999;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+
+.profile-details {
+    margin-top: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    color: var(--text-color);
+    font-size: 14px;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 51, 51, 0.2);
+}
+
+.detail-item i {
+    color: var(--primary-color);
+    width: 18px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.detail-item span {
+    font-weight: 600;
+}
+
+.status-active {
+    color: #00ff00;
+    font-weight: 700;
+    text-shadow: 0 0 8px #00ff00;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-details {
+        grid-template-columns: 1fr;
+    }
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    .profile-stats {
+        padding: 10px 5px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    .profile-info .username {
+        font-size: 24px;
+    }
+}
 
-    <style>
-        /* CSS tetap sama seperti sebelumnya */
-        :root {
-            --primary-color: #ff3333;
-            --secondary-color: #1a0000;
-            --accent-color: #4a0000;
-            --text-color: #f0f2f5;
-            --dark-bg: #000000;
-            --glow-color: #cc0000;
-        }
+/* ======== STYLE UNTUK PANEL SELLER ======== */
+.order-card, .send-account-card {
+    background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
+    position: relative;
+    overflow: hidden;
+}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+.order-card::before, .send-account-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    box-shadow: 0 0 20px var(--primary-color);
+}
 
-        body {
-            background: var(--dark-bg);
-            color: var(--text-color);
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            padding: 20px;
-        }
+.order-card::after, .send-account-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 0%, rgba(255, 51, 51, 0.1) 50%, transparent 100%);
+    pointer-events: none;
+}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+.order-card h2, .send-account-card h2 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-size: 22px;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.3);
+    padding-bottom: 10px;
+}
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
-            border-radius: 15px;
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
-        }
+.form-group {
+    margin-bottom: 15px;
+}
 
-        .header h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 36px;
-            color: var(--primary-color);
-            text-shadow: 0 0 10px var(--glow-color);
-            letter-spacing: 2px;
-        }
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ff9999;
+    font-weight: 600;
+}
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 51, 51, 0.3);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-family: 'Poppins', sans-serif;
+}
 
-        .card {
-            background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
-            transition: transform 0.3s ease;
-        }
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+}
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 25px rgba(255, 51, 51, 0.5);
-        }
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
 
-        .card h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-            font-size: 22px;
-            border-bottom: 1px solid rgba(255, 51, 51, 0.3);
-            padding-bottom: 10px;
-        }
+.btn-primary {
+    background: var(--primary-color);
+    color: var(--dark-bg);
+    box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+}
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+.btn-primary:hover {
+    background: #ff5555;
+    box-shadow: 0 0 20px #ff5555;
+    transform: translateY(-2px);
+}
 
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #ff9999;
-            font-weight: 600;
-        }
+.btn-danger {
+    background: #cc0000;
+    color: white;
+}
 
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid rgba(255, 51, 51, 0.3);
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-family: 'Poppins', sans-serif;
-        }
+.btn-danger:hover {
+    background: #ff0000;
+    transform: translateY(-2px);
+}
 
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
-        }
+.order-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
 
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
+.order-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
 
-        .btn-primary {
-            background: var(--primary-color);
-            color: var(--dark-bg);
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
-        }
+.order-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
 
-        .btn-primary:hover {
-            background: #ff5555;
-            box-shadow: 0 0 20px #ff5555;
-            transform: translateY(-2px);
-        }
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
 
-        .btn-danger {
-            background: #cc0000;
-            color: white;
-        }
+.status-pending {
+    background: #ff9900;
+    color: black;
+}
 
-        .btn-danger:hover {
-            background: #ff0000;
-            transform: translateY(-2px);
-        }
+.status-completed {
+    background: #00cc00;
+    color: black;
+}
 
-        .order-item {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-color);
-        }
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #ff9999;
+}
 
-        .order-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
+.empty-state i {
+    font-size: 50px;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
 
-        .order-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
+.history-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.3);
+}
 
-        .status {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #ff9999;
+}
 
-        .status-pending {
-            background: #ff9900;
-            color: black;
-        }
+@media (max-width: 768px) {
+    .order-info {
+        flex-direction: column;
+    }
+    
+    .history-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
 
-        .status-completed {
-            background: #00cc00;
-            color: black;
-        }
+  /* ======== MENU BAWAH (NAVBAR) MODIFIKASI ======== */
+  .menu {
+    position: fixed; bottom: 0; width: 100%; 
+    background: rgba(30, 0, 0, 0.95); display: flex; 
+    justify-content: space-around; padding: 10px 0; 
+    border-top: 1px solid var(--primary-color); 
+    box-shadow: 0 -2px 10px rgba(255, 0, 0, 0.5); 
+    backdrop-filter: blur(5px); z-index: 1000;
+    display: flex; 
+  }
+  .menu button { 
+    background: none; border: none; 
+    color: #ff9999; 
+    font-size: 12px; padding: 5px; cursor: pointer; 
+    transition: all 0.3s ease; display: flex; 
+    flex-direction: column; align-items: center; 
+    font-family: 'Poppins', sans-serif; 
+    flex: 1; 
+  }
+  .menu button i {
+      font-size: 20px;
+      margin-bottom: 3px;
+  }
+  .menu button.active {
+      color: var(--primary-color); 
+      text-shadow: 0 0 5px var(--primary-color);
+  }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #ff9999;
-        }
+  @media (min-width: 769px) {
+    .menu { display: none; }
+    .tab-content { padding-bottom: 20px; }
+  }
 
-        .empty-state i {
-            font-size: 50px;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
+  /* ======== POPUP STYLES ======== */
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  }
 
-        .history-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 51, 51, 0.3);
-        }
+  .popup-content {
+    background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 40px rgba(255, 51, 51, 0.7);
+    text-align: center;
+    max-width: 90%;
+    width: 400px;
+    position: relative;
+    animation: popup-appear 0.5s ease-out;
+  }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #ff9999;
-        }
+  @keyframes popup-appear {
+    from {
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
 
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 28px;
-            }
-            
-            .order-info {
-                flex-direction: column;
-            }
-            
-            .history-controls {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-    </style>
+  .popup-title {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary-color);
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px var(--glow-color);
+  }
+
+  .popup-code {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--primary-color);
+    margin: 20px 0;
+    letter-spacing: 5px;
+    text-shadow: 0 0 15px var(--primary-color);
+  }
+
+  .popup-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .popup-close:hover {
+    color: #ff6666;
+    transform: scale(1.2);
+  }
+
+  .popup-message {
+    color: var(--text-color);
+    font-size: 14px;
+    margin-top: 15px;
+    line-height: 1.5;
+  }
+
+</style>
 </head>
 <body>
-    <div class="container">
+
+  <div class="loading" id="loading">
+    <div class="welcome-text" id="welcome-text"></div>
+    <img src="https://e.top4top.io/p_3600kaeln0.png" alt="Sharingan"> 
+    <div class="loading-text">JANGAN PERNAH MENYERAH - 9XV4 -</div>
+  </div>
+
+  <!-- Popup untuk profil -->
+  <div class="popup-overlay" id="profile-popup">
+    <div class="popup-content">
+      <button class="popup-close" id="popup-close">&times;</button>
+      <h2 class="popup-title">KODE RAHASIA</h2>
+      <div class="popup-code">17-1-14-9-20-1-8</div>
+      <p class="popup-message">Angka ini merupakan kode rahasia dari nama seseorang kesukaan nana<br>dalam sistem numer alphabet</p>
+    </div>
+  </div>
+
+  <div class="dashboard-wrapper">
+    
+    <div class="tab-content" id="tab-dashboard">
+        
         <div class="header">
-            <h1><i class="fas fa-user-shield"></i> SELLER PANEL - 9XV4 TR4SH</h1>
-            <p>Kelola Pesanan dan Kirim Data Akun</p>
+            <i class="fas fa-bars icon"></i>
+            <span class="title-app">9XV4 - TR4SH</span>
+            <i class="fas fa-user-circle icon" id="profile-icon"></i>
+        </div>
+        
+        <!-- Teks Kamui yang muncul setelah loading -->
+        <div class="kamui-text" id="kamui-text">SELLER PANEL</div>
+        
+        <!-- PROFIL CARD YANG DIUBAH -->
+        <div class="profile-card">
+          <div class="profile-header">
+              <div class="profile-image-container">
+                  <img src="https://e.top4top.io/p_360064waa0.jpg" alt="Profile Picture"> 
+                  <div class="online-status"></div>
+              </div>
+              <div class="profile-info">
+                  <div class="username">NANA</div>
+                  <div class="role">SELLER ADMIN</div>
+                  <div class="level">LEVEL 99</div>
+              </div>
+          </div>
+          
+          <div class="profile-stats">
+              <div class="stat-item">
+                  <div class="stat-value" id="total-orders">0</div>
+                  <div class="stat-label">Total Pesanan</div>
+              </div>
+              <div class="stat-item">
+                  <div class="stat-value" id="pending-orders">0</div>
+                  <div class="stat-label">Menunggu</div>
+              </div>
+              <div class="stat-item">
+                  <div class="stat-value" id="completed-orders">0</div>
+                  <div class="stat-label">Selesai</div>
+              </div>
+          </div>
+          
+          <div class="profile-details">
+              <div class="detail-item">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>Bergabung: 26/07/24</span>
+              </div>
+              <div class="detail-item">
+                  <i class="fas fa-shield-alt"></i>
+                  <span>Status: <span class="status-active">Active</span></span>
+              </div>
+              <div class="detail-item">
+                  <i class="fas fa-bolt"></i>
+                  <span>Power: Pro Max</span>
+              </div>
+          </div>
+        </div>
+        
+        <!-- KARTU DAFTAR PESANAN -->
+        <div class="order-card">
+          <div class="history-controls">
+              <h2><i class="fas fa-tasks"></i> Daftar Pesanan</h2>
+              <button class="btn btn-danger" onclick="clearAllHistory()">
+                  <i class="fas fa-trash"></i> Hapus Semua Riwayat
+              </button>
+          </div>
+          <div id="orders-list">
+              <div class="loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <p>Memuat data pesanan...</p>
+              </div>
+          </div>
         </div>
 
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="history-controls">
-                    <h2><i class="fas fa-tasks"></i> Daftar Pesanan</h2>
-                    <button class="btn btn-danger" onclick="clearAllHistory()">
-                        <i class="fas fa-trash"></i> Hapus Semua Riwayat
-                    </button>
-                </div>
-                <div id="orders-list">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Memuat data pesanan...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2><i class="fas fa-paper-plane"></i> Kirim Data Akun</h2>
-                <form id="send-account-form">
-                    <div class="form-group">
-                        <label for="order-id">Pilih Pesanan:</label>
-                        <select id="order-id" required>
-                            <option value="">-- Pilih Pesanan --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="account-username">Username Akun:</label>
-                        <input type="text" id="account-username" required placeholder="Masukkan username">
-                    </div>
-                    <div class="form-group">
-                        <label for="account-password">Password Akun:</label>
-                        <input type="text" id="account-password" required placeholder="Masukkan password">
-                    </div>
-                    <div class="form-group">
-                        <label for="account-domain">Domain Akun:</label>
-                        <input type="text" id="account-domain" required placeholder="Masukkan domain (contoh: example.com)">
-                    </div>
-                    <div class="form-group">
-                        <label for="account-notes">Catatan Tambahan:</label>
-                        <textarea id="account-notes" rows="3" placeholder="Informasi tambahan tentang akun"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Kirim Data Akun
-                    </button>
-                </form>
-            </div>
-        </div>
     </div>
 
-    <script>
-        // Firebase configuration - GANTI DENGAN CONFIG ANDA
-        // Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCX4AniDndhJTPrMx8HdTQt1BXvZX1",
-    authDomain: "nana-776ae.firebaseapp.com",
-    projectId: "nana-776ae",
-    storageBucket: "nana-776ae.firebasestorage.app",
-    messagingSenderId: "856842447495",
-    appId: "1:856842447495:web:db58e1233dc5e88b6c9a9f"
-};
+    <div class="tab-content" id="tab-send-account">
+        <div class="header">
+            <i class="fas fa-bars icon"></i>
+            <span class="title-app">9XV4 - TR4SH</span>
+            <i class="fas fa-user-circle icon" id="profile-icon-2"></i>
+        </div>
+        
+        <div class="kamui-text" id="kamui-text-2">KIRIM DATA AKUN</div>
+        
+        <!-- KARTU KIRIM DATA AKUN -->
+        <div class="send-account-card">
+            <h2><i class="fas fa-paper-plane"></i> Kirim Data Akun</h2>
+            <form id="send-account-form">
+                <div class="form-group">
+                    <label for="order-id">Pilih Pesanan:</label>
+                    <select id="order-id" required>
+                        <option value="">-- Pilih Pesanan --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="account-username">Username Akun:</label>
+                    <input type="text" id="account-username" required placeholder="Masukkan username">
+                </div>
+                <div class="form-group">
+                    <label for="account-password">Password Akun:</label>
+                    <input type="text" id="account-password" required placeholder="Masukkan password">
+                </div>
+                <div class="form-group">
+                    <label for="account-domain">Domain Akun:</label>
+                    <input type="text" id="account-domain" required placeholder="Masukkan domain (contoh: example.com)">
+                </div>
+                <div class="form-group">
+                    <label for="account-notes">Catatan Tambahan:</label>
+                    <textarea id="account-notes" rows="3" placeholder="Informasi tambahan tentang akun"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Kirim Data Akun
+                </button>
+            </form>
+        </div>
+    </div>
+    
+  </div>
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+  <div class="menu" id="navbar">
+    <button data-tab="tab-dashboard" class="active"> 
+        <i class="fas fa-tachometer-alt"></i>
+        DASHBOARD
+    </button>
+    <button data-tab="tab-send-account">
+        <i class="fas fa-paper-plane"></i>
+        KIRIM AKUN
+    </button>
+  </div>
 
-        let orders = [];
+<script>
+  // Firebase configuration
+  const firebaseConfig = {
+      apiKey: "AIzaSyCX4AniDndhJTPrMx8HdTQt1BXvZX1",
+      authDomain: "nana-776ae.firebaseapp.com",
+      projectId: "nana-776ae",
+      storageBucket: "nana-776ae.firebasestorage.app",
+      messagingSenderId: "856842447495",
+      appId: "1:856842447495:web:db58e1233dc5e88b6c9a9f"
+  };
 
-        // Setup real-time listener untuk orders
-        function setupOrdersListener() {
-            return db.collection('orders').orderBy('orderDate', 'desc').onSnapshot((snapshot) => {
-                orders = [];
-                snapshot.forEach((doc) => {
-                    orders.push({ id: doc.id, ...doc.data() });
-                });
-                updateOrdersList();
-            });
-        }
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-        // Hapus pesanan
-        async function deleteOrder(orderId) {
-            if (confirm('Apakah Anda yakin ingin menghapus pesanan ini?')) {
-                try {
-                    await db.collection('orders').doc(orderId).delete();
-                } catch (error) {
-                    console.error('Error deleting order:', error);
-                    alert('Error menghapus pesanan');
-                }
-            }
-        }
+  let orders = [];
 
-        // Hapus semua riwayat
-        async function clearAllHistory() {
-            if (confirm('Apakah Anda yakin ingin menghapus SEMUA riwayat pesanan? Tindakan ini tidak dapat dibatalkan!')) {
-                try {
-                    const batch = db.batch();
-                    orders.forEach((order) => {
-                        const docRef = db.collection('orders').doc(order.id);
-                        batch.delete(docRef);
-                    });
-                    await batch.commit();
-                } catch (error) {
-                    console.error('Error clearing history:', error);
-                    alert('Error menghapus riwayat');
-                }
-            }
-        }
+  // Logika Loading Screen dengan animasi teks WELCOME
+  const loadingScreen = document.getElementById("loading");
+  const dashboardTab = document.getElementById("tab-dashboard");
+  const loadingText = document.querySelector(".loading-text");
+  const welcomeText = document.getElementById("welcome-text");
+  const kamuiText = document.getElementById("kamui-text");
+  const kamuiText2 = document.getElementById("kamui-text-2");
+  
+  const totalLoadTime = 5000; 
+  const zoomDuration = 2000; 
+  const zoomStartTime = totalLoadTime - zoomDuration; 
+  
+  // Fungsi untuk menampilkan teks WELCOME dengan animasi satu per satu
+  function animateWelcomeText() {
+    const text = "WELCOME"; // Gunakan tanpa spasi
+    welcomeText.innerHTML = "";
+    
+    // Tampilkan elemen welcome text
+    welcomeText.classList.add("show");
+    
+    // Buat setiap karakter dengan delay
+    for (let i = 0; i < text.length; i++) {
+      const char = document.createElement("span");
+      char.textContent = text[i];
+      char.className = "welcome-char";
+      char.style.animationDelay = `${i * 0.1}s`;
+      welcomeText.appendChild(char);
+    }
+    
+    // Setelah animasi WELCOME selesai, tampilkan teks Kamui
+    setTimeout(() => {
+      kamuiText.classList.add("show");
+      kamuiText2.classList.add("show");
+    }, text.length * 100 + 500); // Setelah animasi WELCOME selesai + 500ms delay
+  }
 
-        // Update daftar pesanan
-        function updateOrdersList() {
-            const ordersList = document.getElementById('orders-list');
-            const orderSelect = document.getElementById('order-id');
-            
-            // Kosongkan select
-            orderSelect.innerHTML = '<option value="">-- Pilih Pesanan --</option>';
-            
-            if (orders.length === 0) {
-                ordersList.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list"></i>
-                        <h3>Belum Ada Pesanan</h3>
-                        <p>Pesanan dari pembeli akan muncul di sini</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Tampilkan daftar pesanan
-            ordersList.innerHTML = '';
-            orders.forEach((order, index) => {
-                const orderElement = document.createElement('div');
-                orderElement.className = 'order-item';
-                orderElement.innerHTML = `
-                    <div class="order-info">
-                        <div>
-                            <strong>${order.buyerName || 'Unknown Buyer'}</strong><br>
-                            <small>Email: ${order.buyerEmail || 'N/A'}</small><br>
-                            <small>Panel: ${order.panelSize || 'N/A'} - Rp ${order.panelPrice ? parseInt(order.panelPrice).toLocaleString('id-ID') : '0'}</small>
-                        </div>
-                        <div>
-                            <span class="status ${order.status === 'completed' ? 'status-completed' : 'status-pending'}">
-                                ${order.status === 'completed' ? 'SELESAI' : 'MENUNGGU'}
-                            </span>
-                        </div>
-                    </div>
-                    <div>
-                        <strong>Bukti Transfer:</strong><br>
-                        ${order.proofImage ? `<img src="${order.proofImage}" style="max-width: 100px; margin-top: 5px; border-radius: 5px;">` : 'Tidak ada gambar'}
-                    </div>
-                    ${order.accountData ? `
-                    <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 5px;">
-                        <strong>Data Akun Terkirim:</strong><br>
-                        Username: ${order.accountData.username}<br>
-                        Password: ${order.accountData.password}<br>
-                        Domain: ${order.accountData.domain}<br>
-                        ${order.accountData.notes ? `Catatan: ${order.accountData.notes}` : ''}
-                    </div>
-                    ` : ''}
-                    <div class="order-actions">
-                        <button class="btn btn-danger" onclick="deleteOrder('${order.id}')">
-                            <i class="fas fa-trash"></i> Hapus Riwayat
-                        </button>
-                    </div>
-                `;
-                ordersList.appendChild(orderElement);
-                
-                // Tambahkan ke select jika status masih pending
-                if (order.status !== 'completed') {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `Pesanan dari: ${order.buyerName || 'Unknown'} - ${order.panelSize || 'Unknown Panel'}`;
-                    orderSelect.appendChild(option);
-                }
-            });
-        }
+  // Jalankan animasi welcome text setelah sedikit delay
+  setTimeout(() => {
+    animateWelcomeText();
+  }, 500);
 
-        // Kirim data akun ke pembeli
-        document.getElementById('send-account-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const orderIndex = parseInt(document.getElementById('order-id').value);
-            const username = document.getElementById('account-username').value;
-            const password = document.getElementById('account-password').value;
-            const domain = document.getElementById('account-domain').value;
-            const notes = document.getElementById('account-notes').value;
-            
-            if (isNaN(orderIndex)) {
-                alert('Pilih pesanan terlebih dahulu!');
-                return;
-            }
-            
-            if (orderIndex >= orders.length) {
-                alert('Pesanan tidak valid!');
-                return;
-            }
-            
-            const order = orders[orderIndex];
-            
-            try {
-                // Update data pesanan di Firebase
-                await db.collection('orders').doc(order.id).update({
-                    status: 'completed',
-                    accountData: {
-                        username: username,
-                        password: password,
-                        domain: domain,
-                        notes: notes,
-                        sentAt: new Date().toISOString()
-                    }
-                });
-                
-                // Reset form
-                this.reset();
-                
-                alert('Data akun berhasil dikirim ke pembeli!');
-            } catch (error) {
-                console.error('Error updating order:', error);
-                alert('Error mengirim data akun');
-            }
-        });
+  setTimeout(() => {
+    loadingText.style.opacity = '0';
+    loadingScreen.classList.add("zoom-out");
+  }, zoomStartTime - 100); 
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            setupOrdersListener();
-        });
-    </script>
+  setTimeout(() => {
+    dashboardTab.style.display = "block";
+    
+    setTimeout(() => {
+        dashboardTab.classList.add("active");
+    }, zoomDuration - 500); 
+  }, zoomStartTime);
+
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+  }, totalLoadTime); 
+
+  // Logika Penggantian Tab
+  const navButtons = document.querySelectorAll('.menu button');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const targetTabId = button.getAttribute('data-tab');
+
+      navButtons.forEach(btn => btn.classList.remove('active'));
+      tabContents.forEach(content => {
+          content.classList.remove('active');
+          content.style.display = 'none';
+      });
+
+      button.classList.add('active');
+
+      const targetTab = document.getElementById(targetTabId);
+      if (targetTab) {
+          targetTab.style.display = 'block'; 
+          setTimeout(() => {
+              targetTab.classList.add('active'); 
+          }, 10); 
+      }
+    });
+  });
+
+  // Setup real-time listener untuk orders
+  function setupOrdersListener() {
+      return db.collection('orders').orderBy('orderDate', 'desc').onSnapshot((snapshot) => {
+          orders = [];
+          snapshot.forEach((doc) => {
+              orders.push({ id: doc.id, ...doc.data() });
+          });
+          updateOrdersList();
+          updateStats();
+      });
+  }
+
+  // Update statistik pesanan
+  function updateStats() {
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter(order => order.status !== 'completed').length;
+      const completedOrders = orders.filter(order => order.status === 'completed').length;
+      
+      document.getElementById('total-orders').textContent = totalOrders;
+      document.getElementById('pending-orders').textContent = pendingOrders;
+      document.getElementById('completed-orders').textContent = completedOrders;
+  }
+
+  // Hapus pesanan
+  async function deleteOrder(orderId) {
+      if (confirm('Apakah Anda yakin ingin menghapus pesanan ini?')) {
+          try {
+              await db.collection('orders').doc(orderId).delete();
+          } catch (error) {
+              console.error('Error deleting order:', error);
+              alert('Error menghapus pesanan');
+          }
+      }
+  }
+
+  // Hapus semua riwayat
+  async function clearAllHistory() {
+      if (confirm('Apakah Anda yakin ingin menghapus SEMUA riwayat pesanan? Tindakan ini tidak dapat dibatalkan!')) {
+          try {
+              const batch = db.batch();
+              orders.forEach((order) => {
+                  const docRef = db.collection('orders').doc(order.id);
+                  batch.delete(docRef);
+              });
+              await batch.commit();
+          } catch (error) {
+              console.error('Error clearing history:', error);
+              alert('Error menghapus riwayat');
+          }
+      }
+  }
+
+  // Update daftar pesanan
+  function updateOrdersList() {
+      const ordersList = document.getElementById('orders-list');
+      const orderSelect = document.getElementById('order-id');
+      
+      // Kosongkan select
+      orderSelect.innerHTML = '<option value="">-- Pilih Pesanan --</option>';
+      
+      if (orders.length === 0) {
+          ordersList.innerHTML = `
+              <div class="empty-state">
+                  <i class="fas fa-clipboard-list"></i>
+                  <h3>Belum Ada Pesanan</h3>
+                  <p>Pesanan dari pembeli akan muncul di sini</p>
+              </div>
+          `;
+          return;
+      }
+      
+      // Tampilkan daftar pesanan
+      ordersList.innerHTML = '';
+      orders.forEach((order, index) => {
+          const orderElement = document.createElement('div');
+          orderElement.className = 'order-item';
+          orderElement.innerHTML = `
+              <div class="order-info">
+                  <div>
+                      <strong>${order.buyerName || 'Unknown Buyer'}</strong><br>
+                      <small>Email: ${order.buyerEmail || 'N/A'}</small><br>
+                      <small>Panel: ${order.panelSize || 'N/A'} - Rp ${order.panelPrice ? parseInt(order.panelPrice).toLocaleString('id-ID') : '0'}</small>
+                  </div>
+                  <div>
+                      <span class="status ${order.status === 'completed' ? 'status-completed' : 'status-pending'}">
+                          ${order.status === 'completed' ? 'SELESAI' : 'MENUNGGU'}
+                      </span>
+                  </div>
+              </div>
+              <div>
+                  <strong>Bukti Transfer:</strong><br>
+                  ${order.proofImage ? `<img src="${order.proofImage}" style="max-width: 100px; margin-top: 5px; border-radius: 5px;">` : 'Tidak ada gambar'}
+              </div>
+              ${order.accountData ? `
+              <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 5px;">
+                  <strong>Data Akun Terkirim:</strong><br>
+                  Username: ${order.accountData.username}<br>
+                  Password: ${order.accountData.password}<br>
+                  Domain: ${order.accountData.domain}<br>
+                  ${order.accountData.notes ? `Catatan: ${order.accountData.notes}` : ''}
+              </div>
+              ` : ''}
+              <div class="order-actions">
+                  <button class="btn btn-danger" onclick="deleteOrder('${order.id}')">
+                      <i class="fas fa-trash"></i> Hapus Riwayat
+                  </button>
+              </div>
+          `;
+          ordersList.appendChild(orderElement);
+          
+          // Tambahkan ke select jika status masih pending
+          if (order.status !== 'completed') {
+              const option = document.createElement('option');
+              option.value = index;
+              option.textContent = `Pesanan dari: ${order.buyerName || 'Unknown'} - ${order.panelSize || 'Unknown Panel'}`;
+              orderSelect.appendChild(option);
+          }
+      });
+  }
+
+  // Kirim data akun ke pembeli
+  document.getElementById('send-account-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const orderIndex = parseInt(document.getElementById('order-id').value);
+      const username = document.getElementById('account-username').value;
+      const password = document.getElementById('account-password').value;
+      const domain = document.getElementById('account-domain').value;
+      const notes = document.getElementById('account-notes').value;
+      
+      if (isNaN(orderIndex)) {
+          alert('Pilih pesanan terlebih dahulu!');
+          return;
+      }
+      
+      if (orderIndex >= orders.length) {
+          alert('Pesanan tidak valid!');
+          return;
+      }
+      
+      const order = orders[orderIndex];
+      
+      try {
+          // Update data pesanan di Firebase
+          await db.collection('orders').doc(order.id).update({
+              status: 'completed',
+              accountData: {
+                  username: username,
+                  password: password,
+                  domain: domain,
+                  notes: notes,
+                  sentAt: new Date().toISOString()
+              }
+          });
+          
+          // Reset form
+          this.reset();
+          
+          alert('Data akun berhasil dikirim ke pembeli!');
+      } catch (error) {
+          console.error('Error updating order:', error);
+          alert('Error mengirim data akun');
+      }
+  });
+
+  // ==================================
+  // ======== LOGIKA POPUP PROFIL ========
+  // ==================================
+  
+  const profileIcon = document.getElementById('profile-icon');
+  const profileIcon2 = document.getElementById('profile-icon-2');
+  const profilePopup = document.getElementById('profile-popup');
+  const popupClose = document.getElementById('popup-close');
+  
+  // Event listener untuk membuka popup ketika ikon profil diklik
+  profileIcon.addEventListener('click', () => {
+    profilePopup.style.display = 'flex';
+  });
+  
+  profileIcon2.addEventListener('click', () => {
+    profilePopup.style.display = 'flex';
+  });
+  
+  // Event listener untuk menutup popup ketika tombol close diklik
+  popupClose.addEventListener('click', () => {
+    profilePopup.style.display = 'none';
+  });
+  
+  // Event listener untuk menutup popup ketika area luar popup diklik
+  profilePopup.addEventListener('click', (event) => {
+    if (event.target === profilePopup) {
+      profilePopup.style.display = 'none';
+    }
+  });
+  
+  // Event listener untuk menutup popup dengan tombol Escape
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      profilePopup.style.display = 'none';
+    }
+  });
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+      setupOrdersListener();
+  });
+
+</script>
 </body>
 </html>
