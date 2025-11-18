@@ -10,6 +10,7 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
 <style>
   /* Variabel CSS Merah-Hitam */
@@ -403,7 +404,7 @@
 }
 
 /* ======== STYLE UNTUK PANEL SELLER ======== */
-.order-card, .send-account-card {
+.order-card, .send-account-card, .user-approval-card, .topup-approval-card {
     background: linear-gradient(135deg, #1a0000 0%, #4a0000 100%);
     border-radius: 15px;
     padding: 20px;
@@ -414,7 +415,7 @@
     overflow: hidden;
 }
 
-.order-card::before, .send-account-card::before {
+.order-card::before, .send-account-card::before, .user-approval-card::before, .topup-approval-card::before {
     content: '';
     position: absolute;
     top: 0;
@@ -425,7 +426,7 @@
     box-shadow: 0 0 20px var(--primary-color);
 }
 
-.order-card::after, .send-account-card::after {
+.order-card::after, .send-account-card::after, .user-approval-card::after, .topup-approval-card::after {
     content: '';
     position: absolute;
     top: 0;
@@ -436,7 +437,7 @@
     pointer-events: none;
 }
 
-.order-card h2, .send-account-card h2 {
+.order-card h2, .send-account-card h2, .user-approval-card h2, .topup-approval-card h2 {
     font-family: 'Orbitron', sans-serif;
     color: var(--primary-color);
     margin-bottom: 20px;
@@ -502,6 +503,18 @@
     transform: translateY(-2px);
 }
 
+.btn-success {
+    background: #00cc00;
+    color: white;
+    box-shadow: 0 0 15px rgba(0, 204, 0, 0.5);
+}
+
+.btn-success:hover {
+    background: #00ff00;
+    box-shadow: 0 0 20px #00ff00;
+    transform: translateY(-2px);
+}
+
 .btn-danger {
     background: #cc0000;
     color: white;
@@ -512,7 +525,7 @@
     transform: translateY(-2px);
 }
 
-.order-item {
+.order-item, .user-item, .topup-item {
     background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     margin-bottom: 10px;
@@ -520,13 +533,13 @@
     border-left: 4px solid var(--primary-color);
 }
 
-.order-info {
+.order-info, .user-info, .topup-info {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
 }
 
-.order-actions {
+.order-actions, .user-actions, .topup-actions {
     display: flex;
     gap: 10px;
     margin-top: 10px;
@@ -547,6 +560,16 @@
 .status-completed {
     background: #00cc00;
     color: black;
+}
+
+.status-active {
+    background: #00cc00;
+    color: black;
+}
+
+.status-rejected {
+    background: #cc0000;
+    color: white;
 }
 
 .empty-state {
@@ -577,13 +600,17 @@
 }
 
 @media (max-width: 768px) {
-    .order-info {
+    .order-info, .user-info, .topup-info {
         flex-direction: column;
     }
     
     .history-controls {
         flex-direction: column;
         gap: 10px;
+    }
+    
+    .order-actions, .user-actions, .topup-actions {
+        flex-direction: column;
     }
 }
 
@@ -932,6 +959,50 @@
         </div>
     </div>
     
+    <!-- TAB USER APPROVAL BARU -->
+    <div class="tab-content" id="tab-user-approval">
+        <div class="header">
+            <i class="fas fa-bars icon"></i>
+            <span class="title-app">9XV4 - TR4SH</span>
+            <i class="fas fa-user-circle icon" id="profile-icon-4"></i>
+        </div>
+        
+        <div class="kamui-text" id="kamui-text-4">APPROVE USER</div>
+        
+        <!-- KARTU APPROVE USER -->
+        <div class="user-approval-card">
+            <h2><i class="fas fa-user-check"></i> Persetujuan Pengguna</h2>
+            <div id="users-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Memuat data pengguna...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TAB TOP UP APPROVAL BARU -->
+    <div class="tab-content" id="tab-topup-approval">
+        <div class="header">
+            <i class="fas fa-bars icon"></i>
+            <span class="title-app">9XV4 - TR4SH</span>
+            <i class="fas fa-user-circle icon" id="profile-icon-5"></i>
+        </div>
+        
+        <div class="kamui-text" id="kamui-text-5">APPROVE TOP UP</div>
+        
+        <!-- KARTU APPROVE TOP UP -->
+        <div class="topup-approval-card">
+            <h2><i class="fas fa-money-bill-wave"></i> Persetujuan Top Up</h2>
+            <div id="topups-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Memuat permintaan top up...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- TAB CHAT AI YANG TETAP ADA -->
     <div class="tab-content" id="tab-chat-ai">
         <div class="header">
@@ -975,6 +1046,14 @@
         <i class="fas fa-paper-plane"></i>
         KIRIM AKUN
     </button>
+    <button data-tab="tab-user-approval">
+        <i class="fas fa-user-check"></i>
+        APPROVE USER
+    </button>
+    <button data-tab="tab-topup-approval">
+        <i class="fas fa-money-bill-wave"></i>
+        APPROVE TOP UP
+    </button>
     <button data-tab="tab-chat-ai">
         <i class="fas fa-robot"></i>
         CHAT AI
@@ -984,19 +1063,21 @@
 <script>
   // Firebase configuration
   const firebaseConfig = {
-      apiKey: "AIzaSyCX4AniDndhJTPrMx8HdTQt1BXvZX1",
-      authDomain: "nana-776ae.firebaseapp.com",
-      projectId: "nana-776ae",
-      storageBucket: "nana-776ae.firebasestorage.app",
-      messagingSenderId: "856842447495",
-      appId: "1:856842447495:web:db58e1233dc5e88b6c9a9f"
-  };
+    apiKey: "AIzaSyCX4AniDndhJTPrMx8HdTQt1BXvZXldwEw", // YANG BENAR
+    authDomain: "nana-776ae.firebaseapp.com",
+    projectId: "nana-776ae",
+    storageBucket: "nana-776ae.firebasestorage.app",
+    messagingSenderId: "856842447495",
+    appId: "1:856842447495:web:4fe3a9d9779ffbd9b7e622"
+};
 
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
   let orders = [];
+  let users = [];
+  let topups = [];
 
   // Logika Loading Screen dengan animasi teks WELCOME
   const loadingScreen = document.getElementById("loading");
@@ -1006,6 +1087,8 @@
   const kamuiText = document.getElementById("kamui-text");
   const kamuiText2 = document.getElementById("kamui-text-2");
   const kamuiText3 = document.getElementById("kamui-text-3");
+  const kamuiText4 = document.getElementById("kamui-text-4");
+  const kamuiText5 = document.getElementById("kamui-text-5");
   
   const totalLoadTime = 5000; 
   const zoomDuration = 2000; 
@@ -1033,6 +1116,8 @@
       kamuiText.classList.add("show");
       kamuiText2.classList.add("show");
       kamuiText3.classList.add("show");
+      kamuiText4.classList.add("show");
+      kamuiText5.classList.add("show");
     }, text.length * 100 + 500); // Setelah animasi WELCOME selesai + 500ms delay
   }
 
@@ -1093,6 +1178,28 @@
           });
           updateOrdersList();
           updateStats();
+      });
+  }
+
+  // Setup real-time listener untuk users
+  function setupUsersListener() {
+      return db.collection('users').onSnapshot((snapshot) => {
+          users = [];
+          snapshot.forEach((doc) => {
+              users.push({ id: doc.id, ...doc.data() });
+          });
+          updateUsersList();
+      });
+  }
+
+  // Setup real-time listener untuk topups
+  function setupTopupsListener() {
+      return db.collection('topups').orderBy('requestDate', 'desc').onSnapshot((snapshot) => {
+          topups = [];
+          snapshot.forEach((doc) => {
+              topups.push({ id: doc.id, ...doc.data() });
+          });
+          updateTopupsList();
       });
   }
 
@@ -1166,6 +1273,7 @@
                       <strong>${order.buyerName || 'Unknown Buyer'}</strong><br>
                       <small>Email: ${order.buyerEmail || 'N/A'}</small><br>
                       <small>Panel: ${order.panelSize || 'N/A'} - Rp ${order.panelPrice ? parseInt(order.panelPrice).toLocaleString('id-ID') : '0'}</small>
+                      <br><small>Metode: ${order.paymentMethod || 'N/A'}</small>
                   </div>
                   <div>
                       <span class="status ${order.status === 'completed' ? 'status-completed' : 'status-pending'}">
@@ -1173,10 +1281,12 @@
                       </span>
                   </div>
               </div>
+              ${order.proofImage ? `
               <div>
                   <strong>Bukti Transfer:</strong><br>
-                  ${order.proofImage ? `<img src="${order.proofImage}" style="max-width: 100px; margin-top: 5px; border-radius: 5px;">` : 'Tidak ada gambar'}
+                  <img src="${order.proofImage}" style="max-width: 100px; margin-top: 5px; border-radius: 5px;">
               </div>
+              ` : ''}
               ${order.accountData ? `
               <div style="margin-top: 10px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 5px;">
                   <strong>Data Akun Terkirim:</strong><br>
@@ -1202,6 +1312,230 @@
               orderSelect.appendChild(option);
           }
       });
+  }
+
+  // Update daftar pengguna
+  function updateUsersList() {
+      const usersList = document.getElementById('users-list');
+      
+      if (users.length === 0) {
+          usersList.innerHTML = `
+              <div class="empty-state">
+                  <i class="fas fa-users"></i>
+                  <h3>Belum Ada Pengguna</h3>
+                  <p>Pengguna yang mendaftar akan muncul di sini</p>
+              </div>
+          `;
+          return;
+      }
+      
+      // Tampilkan daftar pengguna
+      usersList.innerHTML = '';
+      users.forEach((user) => {
+          const userElement = document.createElement('div');
+          userElement.className = 'user-item';
+          
+          let statusClass = 'status-pending';
+          let statusText = 'MENUNGGU';
+          
+          if (user.status === 'active') {
+              statusClass = 'status-active';
+              statusText = 'AKTIF';
+          } else if (user.status === 'rejected') {
+              statusClass = 'status-rejected';
+              statusText = 'DITOLAK';
+          }
+          
+          userElement.innerHTML = `
+              <div class="user-info">
+                  <div>
+                      <strong>${user.name || 'Unknown User'}</strong><br>
+                      <small>Email: ${user.email || 'N/A'}</small><br>
+                      <small>Telepon: ${user.phone || 'N/A'}</small><br>
+                      <small>Saldo: Rp ${user.balance ? user.balance.toLocaleString('id-ID') : '0'}</small>
+                  </div>
+                  <div>
+                      <span class="status ${statusClass}">${statusText}</span>
+                  </div>
+              </div>
+              <div class="user-actions">
+                  ${user.status === 'pending' ? `
+                  <button class="btn btn-success" onclick="approveUser('${user.id}')">
+                      <i class="fas fa-check"></i> Setujui
+                  </button>
+                  <button class="btn btn-danger" onclick="rejectUser('${user.id}')">
+                      <i class="fas fa-times"></i> Tolak
+                  </button>
+                  ` : ''}
+                  <button class="btn btn-danger" onclick="deleteUser('${user.id}')">
+                      <i class="fas fa-trash"></i> Hapus
+                  </button>
+              </div>
+          `;
+          usersList.appendChild(userElement);
+      });
+  }
+
+  // Update daftar top up
+  function updateTopupsList() {
+      const topupsList = document.getElementById('topups-list');
+      
+      if (topups.length === 0) {
+          topupsList.innerHTML = `
+              <div class="empty-state">
+                  <i class="fas fa-money-bill-wave"></i>
+                  <h3>Belum Ada Permintaan Top Up</h3>
+                  <p>Permintaan top up akan muncul di sini</p>
+              </div>
+          `;
+          return;
+      }
+      
+      // Tampilkan daftar top up
+      topupsList.innerHTML = '';
+      topups.forEach((topup) => {
+          const topupElement = document.createElement('div');
+          topupElement.className = 'topup-item';
+          
+          let statusClass = 'status-pending';
+          let statusText = 'MENUNGGU';
+          
+          if (topup.status === 'completed') {
+              statusClass = 'status-completed';
+              statusText = 'SELESAI';
+          } else if (topup.status === 'rejected') {
+              statusClass = 'status-rejected';
+              statusText = 'DITOLAK';
+          }
+          
+          topupElement.innerHTML = `
+              <div class="topup-info">
+                  <div>
+                      <strong>${topup.userName || 'Unknown User'}</strong><br>
+                      <small>Jumlah: Rp ${topup.amount ? topup.amount.toLocaleString('id-ID') : '0'}</small><br>
+                      <small>Tanggal: ${new Date(topup.requestDate).toLocaleDateString('id-ID')}</small><br>
+                      ${topup.note ? `<small>Catatan: ${topup.note}</small>` : ''}
+                  </div>
+                  <div>
+                      <span class="status ${statusClass}">${statusText}</span>
+                  </div>
+              </div>
+              ${topup.proofImage ? `
+              <div>
+                  <strong>Bukti Transfer:</strong><br>
+                  <img src="${topup.proofImage}" style="max-width: 100px; margin-top: 5px; border-radius: 5px;">
+              </div>
+              ` : ''}
+              <div class="topup-actions">
+                  ${topup.status === 'pending' ? `
+                  <button class="btn btn-success" onclick="approveTopup('${topup.id}', '${topup.userId}', ${topup.amount})">
+                      <i class="fas fa-check"></i> Setujui
+                  </button>
+                  <button class="btn btn-danger" onclick="rejectTopup('${topup.id}')">
+                      <i class="fas fa-times"></i> Tolak
+                  </button>
+                  ` : ''}
+                  <button class="btn btn-danger" onclick="deleteTopup('${topup.id}')">
+                      <i class="fas fa-trash"></i> Hapus
+                  </button>
+              </div>
+          `;
+          topupsList.appendChild(topupElement);
+      });
+  }
+
+  // Approve user
+  async function approveUser(userId) {
+      try {
+          await db.collection('users').doc(userId).update({
+              status: 'active'
+          });
+          alert('Pengguna berhasil disetujui!');
+      } catch (error) {
+          console.error('Error approving user:', error);
+          alert('Error menyetujui pengguna');
+      }
+  }
+
+  // Reject user
+  async function rejectUser(userId) {
+      try {
+          await db.collection('users').doc(userId).update({
+              status: 'rejected'
+          });
+          alert('Pengguna berhasil ditolak!');
+      } catch (error) {
+          console.error('Error rejecting user:', error);
+          alert('Error menolak pengguna');
+      }
+  }
+
+  // Delete user
+  async function deleteUser(userId) {
+      if (confirm('Apakah Anda yakin ingin menghapus pengguna ini?')) {
+          try {
+              await db.collection('users').doc(userId).delete();
+              alert('Pengguna berhasil dihapus!');
+          } catch (error) {
+              console.error('Error deleting user:', error);
+              alert('Error menghapus pengguna');
+          }
+      }
+  }
+
+  // Approve top up
+  async function approveTopup(topupId, userId, amount) {
+      try {
+          // Update topup status
+          await db.collection('topups').doc(topupId).update({
+              status: 'completed',
+              processedDate: new Date().toISOString()
+          });
+          
+          // Get user data
+          const userDoc = await db.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+              const userData = userDoc.data();
+              const newBalance = (userData.balance || 0) + amount;
+              
+              // Update user balance
+              await db.collection('users').doc(userId).update({
+                  balance: newBalance
+              });
+          }
+          
+          alert('Top up berhasil disetujui dan saldo telah ditambahkan!');
+      } catch (error) {
+          console.error('Error approving topup:', error);
+          alert('Error menyetujui top up');
+      }
+  }
+
+  // Reject top up
+  async function rejectTopup(topupId) {
+      try {
+          await db.collection('topups').doc(topupId).update({
+              status: 'rejected',
+              processedDate: new Date().toISOString()
+          });
+          alert('Top up berhasil ditolak!');
+      } catch (error) {
+          console.error('Error rejecting topup:', error);
+          alert('Error menolak top up');
+      }
+  }
+
+  // Delete top up
+  async function deleteTopup(topupId) {
+      if (confirm('Apakah Anda yakin ingin menghapus permintaan top up ini?')) {
+          try {
+              await db.collection('topups').doc(topupId).delete();
+              alert('Permintaan top up berhasil dihapus!');
+          } catch (error) {
+              console.error('Error deleting topup:', error);
+              alert('Error menghapus permintaan top up');
+          }
+      }
   }
 
   // Kirim data akun ke pembeli
@@ -1356,6 +1690,8 @@
   const profileIcon = document.getElementById('profile-icon');
   const profileIcon2 = document.getElementById('profile-icon-2');
   const profileIcon3 = document.getElementById('profile-icon-3');
+  const profileIcon4 = document.getElementById('profile-icon-4');
+  const profileIcon5 = document.getElementById('profile-icon-5');
   const profilePopup = document.getElementById('profile-popup');
   const popupClose = document.getElementById('popup-close');
   
@@ -1369,6 +1705,14 @@
   });
   
   profileIcon3.addEventListener('click', () => {
+    profilePopup.style.display = 'flex';
+  });
+  
+  profileIcon4.addEventListener('click', () => {
+    profilePopup.style.display = 'flex';
+  });
+  
+  profileIcon5.addEventListener('click', () => {
     profilePopup.style.display = 'flex';
   });
   
@@ -1394,6 +1738,8 @@
   // Initialize
   document.addEventListener('DOMContentLoaded', function() {
       setupOrdersListener();
+      setupUsersListener();
+      setupTopupsListener();
   });
 
 </script>
